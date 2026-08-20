@@ -11,6 +11,12 @@ description: Use when the user wants to audit a project's Claude Code usage for 
 
 # Tokentamer
 
+## Flags
+
+### `--help`
+
+If the user invokes this skill with a `--help` flag (e.g. `/tokentamer --help`), do not run the workflow. Instead, read and display the contents of `help.md` (in this skill's folder) verbatim, then stop.
+
 ## Overview
 
 Audits a project's actual Claude Code session transcripts (not the code) to find concrete, evidence-backed opportunities to have used fewer tokens: repeated/duplicated work, context pollution, unused MCP tools, poorly-disclosed skills, bloated prompts, verbose CLAUDE.md/memory files, wrong model choices, missed memory-save opportunities, and places a deterministic script would have beaten an LLM call. Produces a categorized report with real quotes and timestamps, not generic advice.
