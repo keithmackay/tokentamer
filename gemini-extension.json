@@ -1,0 +1,6 @@
+{
+  "name": "tokentamer",
+  "description": "Use when the user wants to audit a project's Claude Code usage for wasted tokens or cost — e.g. \"review our sessions for token waste\", \"how could we have saved tokens on this project\", \"audit our prompts/context usage\", \"find where we polluted context\", \"check if we're using the right model/MCPs/skills efficiently\". Analyzes transcript history, not the codebase itself.",
+  "version": "1.0.0",
+  "contextFileName": "GEMINI.md"
+}
