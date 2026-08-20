@@ -105,6 +105,8 @@ node scripts/scan-transcripts.js /Users/you/Projects/my-app --full --session <se
 
 Each line of output is one session's worth of user turns (truncated to 400 chars by default), per-session model usage, tool-call counts, MCP tool-call timestamps, and Skill invocations — the same data the skill itself analyzes.
 
+Run `/tokentamer --help` (or the equivalent trigger on other platforms) to print usage without running the workflow.
+
 ## Development
 
 This is a documentation-and-script skill package, not a compiled project — there's no build step or test suite to run.
@@ -115,7 +117,9 @@ cd tokentamer
 node scripts/scan-transcripts.js "$PWD" --session <sessionId>   # sanity-check the scanner against this repo's own transcripts
 ```
 
-When editing `SKILL.md`, keep it under ~500 words (progressive disclosure — move heavy reference material into `references/`) and re-sync the ported copies under `skills/tokentamer/` for Codex and Gemini CLI so all four platform versions stay consistent.
+When editing `SKILL.md`, keep it under ~500 words (progressive disclosure — move heavy reference material into `references/`) and re-sync the ported copies under `skills/tokentamer/` for Codex and Gemini CLI so all four platform versions stay consistent. Run `scripts/check-sync.sh` to verify the shared `references/*.md` and `scripts/scan-transcripts.js` files still match between the two trees (it deliberately skips `SKILL.md` and `help.md`, which differ by design between platforms).
+
+`docs/reviews/` and `docs/plans/` are internal dev-history artifacts from past `/improve-this` review passes on this repo, kept for context — they aren't user-facing documentation.
 
 ## Contributing
 

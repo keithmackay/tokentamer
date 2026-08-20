@@ -28,6 +28,13 @@ function stripSystemTags(content) {
     .replace(/<command-name>[\s\S]*?<\/command-name>/g, "");
 }
 
+// Array.from() iterates by Unicode codepoint, unlike String.slice() which
+// operates on UTF-16 code units and can split a surrogate pair in half.
+function truncateSafely(str, maxChars) {
+  const chars = Array.from(str);
+  return chars.length <= maxChars ? str : chars.slice(0, maxChars).join("");
+}
+
 const rawProjectDir = process.argv[2] && !process.argv[2].startsWith("--")
   ? process.argv[2]
   : null;
@@ -93,7 +100,7 @@ for (const file of jsonlFiles) {
           role: "user",
           timestamp: ts,
           length: cleaned.length,
-          content: full ? cleaned : cleaned.slice(0, 400),
+          content: full ? cleaned : truncateSafely(cleaned, 400),
         });
       }
     }
