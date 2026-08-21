@@ -6,6 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+- Add Changelog section to README linking CHANGELOG.md
 - Fix version drift, add sync check, harden truncation, extract platform limitations
 
 ## [1.1.0] - 2026-08-20
