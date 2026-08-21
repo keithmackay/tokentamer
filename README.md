@@ -125,6 +125,10 @@ When editing `SKILL.md`, keep it under ~500 words (progressive disclosure — mo
 
 Contributions are welcome — fork the repo, make your changes on a branch, and open a pull request. If you're changing `SKILL.md` or `references/`, please also update the corresponding copy under `skills/tokentamer/` so the Codex and Gemini CLI ports don't drift out of sync.
 
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md) for release history.
+
 ## License
 
 [MIT](LICENSE)
