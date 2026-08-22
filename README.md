@@ -18,6 +18,13 @@ Audits a project's Claude Code session transcripts to find concrete, evidence-ba
 
 ### Installation
 
+#### From the mackayi marketplace (recommended)
+
+```
+/plugin marketplace add keithmackay/mackayi
+/plugin install tokentamer@mackayi
+```
+
 #### Claude Code
 
 ```bash
