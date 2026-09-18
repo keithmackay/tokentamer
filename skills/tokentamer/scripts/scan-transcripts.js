@@ -93,15 +93,27 @@ for (const file of jsonlFiles) {
       session.lastTimestamp = ts;
     }
 
-    if (entry.type === "user" && entry.message && typeof entry.message.content === "string") {
-      const cleaned = stripSystemTags(entry.message.content).trim();
-      if (cleaned) {
-        session.turns.push({
-          role: "user",
-          timestamp: ts,
-          length: cleaned.length,
-          content: full ? cleaned : truncateSafely(cleaned, 400),
-        });
+    if (entry.type === "user" && entry.message) {
+      const rawContent = entry.message.content;
+      let text = null;
+      if (typeof rawContent === "string") {
+        text = rawContent;
+      } else if (Array.isArray(rawContent)) {
+        text = rawContent
+          .filter(block => block.type === "text")
+          .map(block => block.text || "")
+          .join("\n");
+      }
+      if (text) {
+        const cleaned = stripSystemTags(text).trim();
+        if (cleaned) {
+          session.turns.push({
+            role: "user",
+            timestamp: ts,
+            length: cleaned.length,
+            content: full ? cleaned : truncateSafely(cleaned, 400),
+          });
+        }
       }
     }
 

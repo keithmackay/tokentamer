@@ -31,5 +31,6 @@ Or run the scanner directly to inspect the raw data yourself:
 FLAGS
 
   --help          Show this help text and stop (this file)
+  --version       Print installed version and check for updates, then stop
   --full          (scanner only) untruncated prompt text in scan output
   --session <id>  (scanner only) restrict scan output to one session

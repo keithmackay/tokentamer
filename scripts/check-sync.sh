@@ -10,6 +10,7 @@ MIRROR_DIR="skills/tokentamer"
 FILES=(
   "references/categories.md"
   "references/report-template.md"
+  "references/version-check.md"
   "scripts/scan-transcripts.js"
 )
 
