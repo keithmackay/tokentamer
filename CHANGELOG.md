@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-09-20
+
 ## [1.2.0] - 2026-09-17
 
 - Document mackayi marketplace installation in README
