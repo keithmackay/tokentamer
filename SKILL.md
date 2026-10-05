@@ -15,6 +15,10 @@ If the user invokes this skill with a `--help` flag (e.g. `/tokentamer --help`),
 
 If the user invokes this skill with a `--version` flag (e.g. `/tokentamer --version`), do not run the workflow — follow `references/version-check.md` instead, then stop.
 
+### `--fix`
+
+If the user invokes this skill with a `--fix` flag (e.g. `/tokentamer --fix`), run the full workflow below as normal, then continue into the **Fix Mode** section instead of stopping after the report.
+
 ## Overview
 
 Audits a project's actual Claude Code session transcripts (not the code) to find concrete, evidence-backed opportunities to have used fewer tokens: repeated/duplicated work, context pollution, unused MCP tools, poorly-disclosed skills, bloated prompts, verbose CLAUDE.md/memory files, wrong model choices, missed memory-save opportunities, and places a deterministic script would have beaten an LLM call. Produces a categorized report with real quotes and timestamps, not generic advice.
@@ -36,3 +40,15 @@ Audits a project's actual Claude Code session transcripts (not the code) to find
 5. **Every finding needs evidence**: session id, timestamp, and a short quote or tool-call sequence — not a generic "you could have saved tokens by...". If a category has no evidence in this project, omit it from the report rather than padding with hypotheticals.
 
 6. **Write the report** using the structure in `references/report-template.md`, as a markdown file. Then ask the user whether to also publish it as an Artifact for easier reading; if they say yes and the `artifact-design` skill is available, read it first — if it isn't installed, just publish directly using sensible default formatting.
+
+## Fix Mode (`--fix`)
+
+Only runs after the report above has been generated. Not every finding is something this skill can act on directly — several categories (context pollution, duplicated work, oversized prompts, wrong model choice, redundant fetches) describe past session behavior and have no artifact in the current repo to change; they stay advisory-only. Others correspond to a concrete file or piece of state that can be edited now.
+
+1. **Classify each finding** against `references/categories.md`'s "Fixable via --fix" column into one of: `fixable` (an automatable change exists) or `advisory-only` (no direct fix, report stands as-is).
+2. **Present the fixable list** to the user as a set of independently selectable items (e.g. via AskUserQuestion with `multiSelect: true`, or a plain numbered list if that tool isn't available), one per finding — not grouped by category — so the user can choose any combination. Include a one-line description of what applying it would do. Never auto-apply anything without this confirmation step.
+3. **Apply only the items the user selected**, one at a time:
+   - **Verbose/unsplit harness files** or **skills without progressive disclosure**: split the flagged file per `references/split-guide.md`.
+   - **Missed memory opportunities**: for each selected instance, save the restated fact/preference as a proper memory entry using this session's memory system (if none is available in the current environment, tell the user and skip).
+   - **MCP tools loaded but idle**: don't remove server config automatically (that's a connectivity change outside this repo's files, and the evidence only proves "not called early," not "never used" — see the caveat in `categories.md`); instead surface it as a recommendation the user can act on themselves.
+4. **Confirm what changed**: after applying, list exactly which fixes were applied, which were skipped (and why, if advisory-only or declined), and remind the user to re-run without `--fix` later to verify the fixes actually reduced the flagged patterns.

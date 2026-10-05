@@ -150,6 +150,7 @@ See [CHANGELOG.md](CHANGELOG.md) for release history.
 | `superpowers:writing-skills` reference (plugin namespacing) | ✅ (optional; graceful fallback if absent) | ❌ | ❌ (not installed) | ❌ |
 | `artifact-design` skill reference (report publishing) | ✅ (optional; graceful fallback if absent) | ❌ | ❌ (not installed) | ❌ |
 | Subagent dispatch (per-session delegation) | ✅ | ✅ | ✅ | ❌ |
+| `--fix` mode: multi-select fixable-finding picker | ✅ (AskUserQuestion) | ✅ (numbered-list fallback) | ✅ (numbered-list fallback) | ✅ (numbered-list fallback) |
 
 Legend: ✅ Supported · ❌ Not supported
 
