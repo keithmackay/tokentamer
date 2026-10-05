@@ -7,52 +7,32 @@ description: Use when the user wants to audit a project's Claude Code usage for 
 
 ## Flags
 
-### `--help`
-
-If the user invokes this skill with a `--help` flag (e.g. `/tokentamer --help`), do not run the workflow. Instead, read and display the contents of `help.md` (in this skill's folder) verbatim, then stop.
-
-### `--version`
-
-If the user invokes this skill with a `--version` flag (e.g. `/tokentamer --version`), do not run the workflow — follow `references/version-check.md` instead, then stop.
-
-### `--fix`
-
-If the user invokes this skill with a `--fix` flag (e.g. `/tokentamer --fix`), run the full workflow below as normal, then continue into the **Fix Mode** section instead of stopping after the report.
+- `--help` — don't run the workflow; display `help.md` (in this skill's folder) verbatim, then stop.
+- `--version` — don't run the workflow; follow `references/version-check.md`, then stop.
+- `--fix` — run the workflow, then follow `references/fix-mode.md` instead of stopping after the report.
 
 ## Overview
 
-Audits a project's actual Claude Code session transcripts (not the code) to find concrete, evidence-backed opportunities to have used fewer tokens: repeated/duplicated work, context pollution, unused MCP tools, poorly-disclosed skills, bloated prompts, verbose CLAUDE.md/memory files, wrong model choices, missed memory-save opportunities, and places a deterministic script would have beaten an LLM call. Produces a categorized report with real quotes and timestamps, not generic advice.
+Audits a project's Claude Code session transcripts (not its code) for concrete, evidence-backed ways it could have used fewer tokens, and writes a categorized report with real quotes, timestamps, and token figures — not generic advice.
 
 ## Workflow
 
-1. **Locate transcripts.** Project transcripts live at `~/.claude/projects/<projectDir-with-slashes-and-dots-as-dashes>/*.jsonl`. Confirm the target project's absolute directory with the user if ambiguous — the scan script requires an absolute path and does not infer it from cwd (a relative or ambient path silently looks in the wrong place).
+1. **Locate transcripts.** They live at `~/.claude/projects/<encoded>/*.jsonl`, where `<encoded>` is the project's absolute path with every non-alphanumeric character replaced by `-`. Confirm the target project's absolute path with the user if it's ambiguous; the scanner never infers it from cwd.
 
-2. **Extract raw data** with the bundled script, and reuse its output for every category below rather than re-deriving prompt/tool data by hand:
+2. **Extract raw data** with the bundled scanner. Run it by its path inside this skill's own folder (not the user's project), and write the output to the session scratchpad or a temp directory:
    ```
-   node scripts/scan-transcripts.js <absoluteProjectDir> > /tmp/scan.ndjson
+   node <this-skill-dir>/scripts/scan-transcripts.js <absoluteProjectDir> > <scratch>/scan.ndjson
    ```
-   Output is newline-delimited JSON, one object per session, with: user turns (truncated), models used per session, all tool-call counts, MCP tool-call names + timestamps, and Skill invocations + timestamps. Add `--full` for untruncated prompt text, or `--session <id>` to scope to one session.
+   Output is one JSON line per session: human-typed `turns` (truncated to 400 chars), `tokens` and `tokensByModel` (input / cacheCreation / cacheRead / output), `modelsUsed`, `toolCalls`, `mcpToolCalls` with timestamps, `readTargets` (file/URL → read count), `skillInvocations` (`source`: `slash` or `tool`), and `skillLoads` (injected skill bodies with their size). Add `--full` for untruncated prompts, or `--session <id>` for one session. Reuse this output for every category instead of re-deriving it from raw JSONL.
 
-3. **Also read harness files** if present: `CLAUDE.md`, `AGENTS.md`, `MEMORY.md`, and any `.claude/skills/*/SKILL.md` used in the project. Note line/word counts and whether content that's only needed occasionally is inline vs. split into a referenced file.
+3. **Read the harness files** if present: `CLAUDE.md`, `AGENTS.md`, and any `.claude/skills/*/SKILL.md` in the project, plus the project's memory in `~/.claude/projects/<encoded>/memory/` (`MEMORY.md` and its entries). Note word counts and whether occasionally-needed content is inline rather than in a referenced file.
 
-4. **Analyze per category** — see `references/categories.md` for the full list and what to look for in the scan data. The NDJSON shape lets you delegate per session (or a batch of sessions) to a subagent, passing just the relevant lines rather than the whole file — where subagent dispatch isn't available (see `references/platform-limitations.md`), analyze the NDJSON directly in the main session instead.
+4. **Analyze per category** using `references/categories.md`. For a large project, delegate a session (or batch of sessions) per subagent, passing only the relevant NDJSON lines — where subagent dispatch isn't available (see `references/platform-limitations.md`), analyze the NDJSON directly in the main session.
 
-5. **Every finding needs evidence**: session id, timestamp, and a short quote or tool-call sequence — not a generic "you could have saved tokens by...". If a category has no evidence in this project, omit it from the report rather than padding with hypotheticals.
+5. **Back every finding with evidence**: session id, timestamp, and a short quote or tool-call sequence, plus token figures where the scan has them. Omit categories with no evidence rather than padding with hypotheticals.
 
-6. **Write the report** using the structure in `references/report-template.md`, as a markdown file. Then ask the user whether they'd also like it published for easier reading (on Claude Code this uses the artifact-design skill; no equivalent exists here — just hand back the markdown file).
-
-## Fix Mode (`--fix`)
-
-Only runs after the report above has been generated. Not every finding is something this skill can act on directly — several categories (context pollution, duplicated work, oversized prompts, wrong model choice, redundant fetches) describe past session behavior and have no artifact in the current repo to change; they stay advisory-only. Others correspond to a concrete file or piece of state that can be edited now.
-
-1. **Classify each finding** against `references/categories.md`'s "Fixable via --fix" column into one of: `fixable` (an automatable change exists) or `advisory-only` (no direct fix, report stands as-is).
-2. **Present the fixable list** to the user as a set of independently selectable items (a plain numbered list — Codex and Gemini CLI have no AskUserQuestion-style multi-select tool, see `references/platform-limitations.md`), one per finding — not grouped by category — so the user can choose any combination. Include a one-line description of what applying it would do. Never auto-apply anything without this confirmation step.
-3. **Apply only the items the user selected**, one at a time:
-   - **Verbose/unsplit harness files** or **skills without progressive disclosure**: split the flagged file per `references/split-guide.md`.
-   - **Missed memory opportunities**: for each selected instance, save the restated fact/preference as a proper memory entry using this session's memory system (if none is available in the current environment, tell the user and skip).
-   - **MCP tools loaded but idle**: don't remove server config automatically (that's a connectivity change outside this repo's files, and the evidence only proves "not called early," not "never used" — see the caveat in `categories.md`); instead surface it as a recommendation the user can act on themselves.
-4. **Confirm what changed**: after applying, list exactly which fixes were applied, which were skipped (and why, if advisory-only or declined), and remind the user to re-run without `--fix` later to verify the fixes actually reduced the flagged patterns.
+6. **Write the report** as a markdown file using `references/report-template.md`, and hand that file back (Artifact publishing is Claude Code-only; see `references/platform-limitations.md`).
 
 ## Platform Limitations
 
-See `references/platform-limitations.md` for the features from the original (Claude Code) skill that this platform doesn't support and their documented fallbacks.
+See `references/platform-limitations.md` for the Claude Code features this platform lacks and their fallbacks.

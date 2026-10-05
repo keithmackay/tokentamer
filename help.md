@@ -26,11 +26,14 @@ USAGE
 
 Or run the scanner directly to inspect the raw data yourself:
 
-  node scripts/scan-transcripts.js /absolute/path/to/project > /tmp/scan.ndjson
+  node <skill-dir>/scripts/scan-transcripts.js /absolute/path/to/project > scan.ndjson
 
 FLAGS
 
   --help          Show this help text and stop (this file)
   --version       Print installed version and check for updates, then stop
+  --fix           Run the audit, then offer to apply the fixable findings
+                  (split verbose files, save missed memories) — you pick
+                  which; nothing is applied without confirmation
   --full          (scanner only) untruncated prompt text in scan output
   --session <id>  (scanner only) restrict scan output to one session

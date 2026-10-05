@@ -6,7 +6,7 @@ Followed when the skill is invoked with `--version` instead of running the norma
 2. Print: `tokentamer v<installed-version>`
 3. Best-effort update check — determine this skill's GitHub source repo:
    a. If `.git` exists here and `git remote get-url origin` resolves to a `github.com` URL, use that `owner/repo`.
-   b. Otherwise, search this skill's own `README.md` for the first `https://github.com/<owner>/<repo>` URL and use that.
+   b. Otherwise, search this skill's own `README.md` for the first `https://github.com/<owner>/tokentamer` URL with a real owner (skip placeholders like `<owner>` and links to other repos) and use that; it is `keithmackay/tokentamer` as shipped.
    c. If neither yields a repo, or the `gh` CLI isn't installed/authenticated: stop here. Print nothing further — no status line, no error.
 4. If a repo was found: run `gh api repos/<owner>/<repo>/releases/latest -q .tag_name` (strip a leading `v`). Compare to the installed version:
    - Equal → append: `Status: up to date`
