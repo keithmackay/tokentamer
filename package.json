@@ -1,0 +1,8 @@
+{
+  "name": "tokentamer",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test test/ && bash scripts/check-sync.sh"
+  }
+}

@@ -6,7 +6,7 @@ The following features from the original (Claude Code) skill are not supported o
 
 | Feature | Reason |
 |---------|--------|
-| Reference to `superpowers:writing-skills` (step 4, categories.md) | Plugin-namespaced Claude Code skill; not installed/resolvable on Codex or Gemini CLI. If word-count guidance is needed, apply the general rule directly: keep the always-loaded SKILL.md under ~500 words, move heavy reference material to separate files. |
+| Reference to `superpowers:writing-skills` (categories.md) | Plugin-namespaced Claude Code skill; not installed/resolvable on Codex or Gemini CLI. If word-count guidance is needed, apply the general rule directly: keep the always-loaded SKILL.md under ~500 words, move heavy reference material to separate files. |
 | Reference to the `artifact-design` skill (step 6) | Claude Code-specific Artifact publishing skill; has no equivalent on Codex or Gemini CLI. Skip that step — just deliver the markdown report file directly. |
 | Subagent dispatch (step 4) | Supported on Codex; **not** supported on Gemini CLI (no `Task`-style dispatch). On Gemini CLI, analyze the NDJSON scan output directly in the main session rather than delegating per session/batch. |
 | AskUserQuestion multi-select (Fix Mode step 2) | Claude Code-specific UI tool; no equivalent on Codex or Gemini CLI. Present the fixable-item list as a plain numbered list and ask the user to name which numbers to apply, in any combination. |

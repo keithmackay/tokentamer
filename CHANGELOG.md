@@ -6,7 +6,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-10-05
+
+- Add `--fix` mode: offers to apply fixable findings (split verbose harness/skill files, save missed memories) after the report, with per-item confirmation
+- Scanner: stop counting injected skill bodies and subagent prompts as user turns; report them as `skillLoads` instead
+- Scanner: record slash-command skill invocations (`source: "slash"`) alongside `Skill` tool calls
+- Scanner: add per-session and per-model token totals (deduplicated by message id) and `readTargets` for repeated reads/fetches
+- Scanner: `--full` output is now one line per session (valid NDJSON); path encoding matches Claude Code for paths with spaces/underscores; stricter argument parsing
+- Add fixture-based tests (`npm test`) covering the scanner and sync check
+- Move Fix Mode into `references/fix-mode.md`; SKILL.md back under ~500 words
+- GEMINI.md now points to the skill on demand instead of importing it into every Gemini session
+- Missed memories are saved to the audited project's memory directory; Claude Code memory location included in harness-file review
+- Stop tracking `.sessionstats/`; fix README placeholders and `--version` repo detection; `check-sync.sh` covers all shared references
+
 ## [1.3.0] - 2026-09-20
+
+- Version bump only
 
 ## [1.2.0] - 2026-09-17
 
@@ -25,6 +40,5 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 ## [1.0.0] - 2026-08-20
 
 - Initial commit: tokentamer skill
-- Initial commit
 - Add .gitignore
 

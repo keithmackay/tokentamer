@@ -6,7 +6,7 @@ Audits a project's Claude Code session transcripts to find concrete, evidence-ba
 
 - **Evidence-based findings** — every finding cites a session id, timestamp, and quote or tool-call sequence, not generic advice
 - **Deterministic extraction** — a bundled script parses transcript JSONL directly instead of asking the model to eyeball raw logs
-- **Ten review categories** — context pollution, duplicated work, LLM-vs-script calls, idle MCP tools, undisclosed skills, oversized prompts, verbose harness files, wrong model choice, missed memory opportunities, and redundant reads
+- **Ten review categories** — context pollution, duplicated work, LLM-vs-script calls, late or rarely used MCP tools, undisclosed skills, oversized prompts, verbose harness files, wrong model choice, missed memory opportunities, and redundant reads
 - **Scales to large histories** — output is newline-delimited JSON (one session per line), so a large project can be paged through or delegated to subagents instead of loaded whole into context
 - **Cross-platform** — ships as a native skill for Claude Code, Codex, Antigravity, and Gemini CLI, with documented fallbacks where a platform lacks a feature the others have
 
@@ -28,6 +28,7 @@ Audits a project's Claude Code session transcripts to find concrete, evidence-ba
 #### Claude Code
 
 ```bash
+mkdir -p ~/.claude/skills
 cp -r /path/to/tokentamer/ ~/.claude/skills/tokentamer/
 ```
 
@@ -62,6 +63,7 @@ Place the plugin directory where Codex can find it, then add an entry to your ma
 
 **Global install** (all workspaces):
 ```bash
+mkdir -p ~/.gemini/antigravity/skills
 cp -r /path/to/tokentamer/ ~/.gemini/antigravity/skills/tokentamer/
 ```
 
@@ -79,7 +81,7 @@ Skills are auto-discovered. You can also mention the skill by name to force acti
 Gemini CLI installs extensions directly from GitHub:
 
 ```bash
-gemini extensions install https://github.com/<owner>/tokentamer
+gemini extensions install https://github.com/keithmackay/tokentamer
 ```
 
 To update:
@@ -87,7 +89,7 @@ To update:
 gemini extensions update tokentamer
 ```
 
-The skill is auto-discovered from `GEMINI.md` after installation. Local install is not directly supported — this directory must live in a GitHub repository for `gemini extensions install` to work.
+After installation, `GEMINI.md` tells Gemini to load the skill only when you ask for a token-waste audit. Local install is not directly supported — this directory must live in a GitHub repository for `gemini extensions install` to work.
 
 ## Usage
 
@@ -110,21 +112,30 @@ node scripts/scan-transcripts.js /Users/you/Projects/my-app > /tmp/scan.ndjson
 node scripts/scan-transcripts.js /Users/you/Projects/my-app --full --session <sessionId>
 ```
 
-Each line of output is one session's worth of user turns (truncated to 400 chars by default), per-session model usage, tool-call counts, MCP tool-call timestamps, and Skill invocations — the same data the skill itself analyzes.
+Each line of output is one session: human-typed turns (truncated to 400 chars by default), token totals per session and per model, model usage, tool-call counts, MCP tool-call timestamps, repeated read/fetch targets, skill invocations (slash command or `Skill` tool), and injected skill bodies with their size — the same data the skill itself analyzes.
 
-Run `/tokentamer --help` (or the equivalent trigger on other platforms) to print usage without running the workflow.
+To have the skill offer fixes after the report, add `--fix`:
+
+```
+/tokentamer --fix review ~/Projects/my-app for token waste
+```
+
+It lists only the findings it can act on — splitting a verbose CLAUDE.md/SKILL.md/memory file, or saving a restated preference as a memory for the audited project — and applies just the ones you pick. Everything else stays advisory.
+
+Run `/tokentamer --help` (or the equivalent trigger on other platforms) to print usage without running the workflow, or `--version` to print the installed version and check for updates.
 
 ## Development
 
-This is a documentation-and-script skill package, not a compiled project — there's no build step or test suite to run.
+This is a documentation-and-script skill package, not a compiled project — there's no build step. Tests use Node's built-in runner against a synthetic transcript fixture, then run the sync check:
 
 ```bash
-git clone <repo>
+git clone https://github.com/keithmackay/tokentamer.git
 cd tokentamer
+npm test
 node scripts/scan-transcripts.js "$PWD" --session <sessionId>   # sanity-check the scanner against this repo's own transcripts
 ```
 
-When editing `SKILL.md`, keep it under ~500 words (progressive disclosure — move heavy reference material into `references/`) and re-sync the ported copies under `skills/tokentamer/` for Codex and Gemini CLI so all four platform versions stay consistent. Run `scripts/check-sync.sh` to verify the shared `references/*.md` and `scripts/scan-transcripts.js` files still match between the two trees (it deliberately skips `SKILL.md` and `help.md`, which differ by design between platforms).
+When editing `SKILL.md`, keep it under ~500 words (progressive disclosure — move heavy reference material into `references/`) and re-sync the ported copies under `skills/tokentamer/` for Codex and Gemini CLI so all four platform versions stay consistent. `npm test` runs `scripts/check-sync.sh`, which verifies the shared `references/*.md` and `scripts/scan-transcripts.js` files still match between the two trees (it deliberately skips `SKILL.md`, `help.md`, and the port-only `platform-limitations.md`, which differ by design between platforms).
 
 `docs/reviews/` and `docs/plans/` are internal dev-history artifacts from past `/improve-this` review passes on this repo, kept for context — they aren't user-facing documentation.
 
@@ -148,7 +159,7 @@ See [CHANGELOG.md](CHANGELOG.md) for release history.
 | Sub-documents (`references/`) | ✅ | ✅ | ✅ | ✅ |
 | Scripts (`scripts/scan-transcripts.js`) | ✅ | ✅ | ✅ | ✅ |
 | `superpowers:writing-skills` reference (plugin namespacing) | ✅ (optional; graceful fallback if absent) | ❌ | ❌ (not installed) | ❌ |
-| `artifact-design` skill reference (report publishing) | ✅ (optional; graceful fallback if absent) | ❌ | ❌ (not installed) | ❌ |
+| `artifact-design` skill reference (report publishing) | ✅ (optional; graceful fallback if absent) | ❌ | ❌ (markdown report returned instead) | ❌ |
 | Subagent dispatch (per-session delegation) | ✅ | ✅ | ✅ | ❌ |
 | `--fix` mode: multi-select fixable-finding picker | ✅ (AskUserQuestion) | ✅ (numbered-list fallback) | ✅ (numbered-list fallback) | ✅ (numbered-list fallback) |
 

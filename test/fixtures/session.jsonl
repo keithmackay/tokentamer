@@ -1,0 +1,9 @@
+{"type":"user","timestamp":"2026-01-01T00:00:00.000Z","message":{"role":"user","content":"<command-message>improve-this</command-message>\n<command-name>/improve-this</command-name>"}}
+{"type":"user","isMeta":true,"timestamp":"2026-01-01T00:00:01.000Z","message":{"role":"user","content":[{"type":"text","text":"Base directory for this skill: /home/u/.claude/skills/improve-this\n\nYou are running an improvement review."}]}}
+{"type":"user","timestamp":"2026-01-01T00:00:02.000Z","message":{"role":"user","content":"fix the bug <system-reminder>ignore me</system-reminder>"}}
+{"type":"assistant","timestamp":"2026-01-01T00:00:03.000Z","message":{"id":"msg_1","model":"claude-test","usage":{"input_tokens":10,"cache_creation_input_tokens":100,"cache_read_input_tokens":1000,"output_tokens":5},"content":[{"type":"text","text":"Reading."}]}}
+{"type":"assistant","timestamp":"2026-01-01T00:00:03.100Z","message":{"id":"msg_1","model":"claude-test","usage":{"input_tokens":10,"cache_creation_input_tokens":100,"cache_read_input_tokens":1000,"output_tokens":5},"content":[{"type":"tool_use","name":"Read","input":{"file_path":"/p/a.js"}}]}}
+{"type":"user","timestamp":"2026-01-01T00:00:04.000Z","message":{"role":"user","content":[{"type":"tool_result","content":"file body"},{"type":"text","text":"also check b.js"}]}}
+{"type":"assistant","timestamp":"2026-01-01T00:00:05.000Z","message":{"id":"msg_2","model":"claude-test","usage":{"input_tokens":1,"cache_creation_input_tokens":0,"cache_read_input_tokens":2000,"output_tokens":7},"content":[{"type":"tool_use","name":"Read","input":{"file_path":"/p/a.js"}},{"type":"tool_use","name":"WebFetch","input":{"url":"https://example.com"}},{"type":"tool_use","name":"mcp__srv__do","input":{}},{"type":"tool_use","name":"Skill","input":{"skill":"plsfix"}}]}}
+{"type":"user","isSidechain":true,"timestamp":"2026-01-01T00:00:06.000Z","message":{"role":"user","content":"subagent prompt from the main agent"}}
+not valid json
