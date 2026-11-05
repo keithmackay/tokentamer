@@ -1,0 +1,2 @@
+{"type":"user","timestamp":"2026-03-02T00:00:00.000Z","message":{"role":"user","content":"worktree work"}}
+{"type":"assistant","timestamp":"2026-03-02T00:00:01.000Z","message":{"id":"w1","model":"model-real","usage":{"input_tokens":1,"output_tokens":1},"content":[{"type":"text","text":"ok"}]}}

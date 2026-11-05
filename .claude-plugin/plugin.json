@@ -1,0 +1,8 @@
+{
+  "name": "tokentamer",
+  "version": "1.6.0",
+  "description": "Audits a project's Claude Code session transcripts for token-waste patterns and produces an evidence-backed report",
+  "author": { "name": "Keith MacKay" },
+  "repository": "https://github.com/keithmackay/tokentamer",
+  "license": "MIT"
+}

@@ -1,13 +1,14 @@
 WHAT IT DOES
 
 Audits a project's Claude Code session transcripts (not the code) to find
-concrete, evidence-backed opportunities to have used fewer tokens: repeated
-or duplicated work, context pollution, MCP tools loaded but never used,
-skills without progressive disclosure, oversized prompts, verbose
-CLAUDE.md/memory files, wrong model choices, missed memory-save
-opportunities, and places a deterministic script would have beaten an LLM
-call. Produces a categorized markdown report with real quotes and
-timestamps from the target project's own history.
+concrete, evidence-backed opportunities to have used fewer tokens: context
+pollution (including sessions that hit compaction), duplicated work, LLM
+calls a script could have replaced, MCP servers connected but unused,
+always-loaded skill listings, skills without progressive disclosure,
+oversized prompts, verbose CLAUDE.md/memory files, wrong model choices,
+costly subagent delegation, missed memory-save opportunities, and
+redundant reads. Produces a categorized markdown report with real quotes,
+timestamps and token figures from the target project's own history.
 
 WHAT IT NEEDS
 
@@ -15,9 +16,10 @@ WHAT IT NEEDS
 - The target project must have existing Claude Code session transcripts
   under ~/.claude/projects/<encoded-project-path>/*.jsonl — there is
   nothing to audit for a project with no prior sessions
-- Two steps reference Claude Code-only skills (superpowers:writing-skills,
-  artifact-design) that have no equivalent here — see the Platform
-  Limitations section in SKILL.md for the documented fallback
+- Optional, Claude Code only: the superpowers:writing-skills and
+  artifact-design skills sharpen two steps (skill word-count guidance,
+  Artifact publishing). Without them, or on Codex, Antigravity or Gemini
+  CLI, the workflow uses the fallbacks in references/platform-limitations.md
 
 USAGE
 

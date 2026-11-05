@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ABOUTME: verifies the root and Codex/Gemini-mirror copies of shared tokentamer
-# ABOUTME: files stay identical (SKILL.md and help.md differ intentionally — skip those)
+# ABOUTME: files stay identical (every shipped file, including SKILL.md and help.md)
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -8,8 +8,11 @@ CANONICAL_DIR="."
 MIRROR_DIR="skills/tokentamer"
 
 FILES=(
+  "SKILL.md"
+  "help.md"
   "references/categories.md"
   "references/fix-mode.md"
+  "references/platform-limitations.md"
   "references/report-template.md"
   "references/split-guide.md"
   "references/version-check.md"

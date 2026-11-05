@@ -1,0 +1,2 @@
+{"type":"user","isSidechain":true,"agentId":"mcp","timestamp":"2026-03-01T00:00:04.100Z","message":{"role":"user","content":"use the server"}}
+{"type":"assistant","isSidechain":true,"agentId":"mcp","timestamp":"2026-03-01T00:00:04.200Z","message":{"id":"sa1","model":"model-small","usage":{"input_tokens":1,"output_tokens":1},"content":[{"type":"tool_use","name":"mcp__srv__lookup","input":{}},{"type":"tool_use","name":"Skill","input":{"skill":"plsfix"}}]}}

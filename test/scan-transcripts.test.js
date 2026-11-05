@@ -23,6 +23,16 @@ function makeHome() {
   fs.mkdirSync(richDir, { recursive: true });
   fs.copyFileSync(path.join(here, "fixtures", "rich.jsonl"), path.join(richDir, "rich-session.jsonl"));
   fs.cpSync(path.join(here, "fixtures", "rich-subagents"), path.join(richDir, "rich-session", "subagents"), { recursive: true });
+
+  const realRoot = path.join(home, ".claude", "projects");
+  const real = path.join(realRoot, "-Users-test-real");
+  fs.mkdirSync(real, { recursive: true });
+  fs.copyFileSync(path.join(here, "fixtures", "realistic.jsonl"), path.join(real, "realistic-session.jsonl"));
+  fs.cpSync(path.join(here, "fixtures", "realistic-subagents"), path.join(real, "realistic-session", "subagents"), { recursive: true });
+  for (const [dir, id] of [["-Users-test-real--worktrees-feat", "wt-feat"], ["-Users-test-real--claude-worktrees-x", "wt-x"], ["-Users-test-real-other", "decoy"]]) {
+    fs.mkdirSync(path.join(realRoot, dir), { recursive: true });
+    fs.copyFileSync(path.join(here, "fixtures", "worktree.jsonl"), path.join(realRoot, dir, `${id}.jsonl`));
+  }
   return home;
 }
 
@@ -128,4 +138,43 @@ test("sessions without subagents or attachments get empty defaults", () => {
   assert.deepEqual(s.subagents, []);
   assert.deepEqual(s.mcpToolUsage, { srv: { available: 1, used: 1 } }, "called tools count even without a tool listing");
   assert.equal(s.skillListing, null);
+});
+
+function scanAll(dir, ...args) {
+  const result = scan(dir, ...args);
+  assert.equal(result.status, 0, result.stderr);
+  return result.stdout.trim().split("\n").map(line => JSON.parse(line));
+}
+
+function realisticSession() {
+  return scanAll("/Users/test/real").find(s => s.sessionId === "realistic-session");
+}
+
+test("drops compaction summaries, local-command output and interrupts from turns", () => {
+  const s = realisticSession();
+  assert.deepEqual(s.turns.map(t => t.content), ["/model sonnet", "hello there", "! ls", "after compaction"]);
+  assert.equal(s.compactions.length, 1);
+  assert.equal(s.compactions[0].timestamp, "2026-03-01T00:00:06.000Z");
+  assert.ok(s.compactions[0].length > 50);
+  assert.equal(s.interruptions, 2);
+});
+
+test("ignores <synthetic> placeholder replies for model attribution", () => {
+  const s = realisticSession();
+  assert.deepEqual(s.turns.map(t => t.model), ["model-real", "model-real", "model-real", "model-real"]);
+  assert.deepEqual(s.modelsUsed, { "model-real": 2 });
+  assert.deepEqual(Object.keys(s.tokensByModel), ["model-real"]);
+});
+
+test("counts subagent MCP calls and skills", () => {
+  const s = realisticSession();
+  assert.deepEqual(Object.keys(s.subagents[0].mcpToolCalls), ["mcp__srv__lookup"]);
+  assert.deepEqual(s.subagents[0].skillInvocations.map(i => i.skill), ["plsfix"]);
+  assert.deepEqual(s.mcpToolUsage, { srv: { available: 2, used: 1 } });
+});
+
+test("includes nested worktree sessions but not similarly named projects", () => {
+  const sessions = scanAll("/Users/test/real");
+  const byId = Object.fromEntries(sessions.map(s => [s.sessionId, s.worktree]));
+  assert.deepEqual(byId, { "realistic-session": null, "wt-feat": "feat", "wt-x": "x" });
 });

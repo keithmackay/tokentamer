@@ -14,7 +14,7 @@ Bullet list of concrete practices (save to memory, split CLAUDE.md, script inste
 
 ## Findings by category
 ### <Category>
-- **Evidence:** session `<id>`, `<timestamp>` — "<quote>"
+- **Evidence:** session `<id>`, `<timestamp>` — "<quote>" (mask credentials, e.g. `sk-…[redacted]`)
 - **Cost:** why this was expensive — cite the scan's `tokens`/`tokensByModel` figures where they apply, otherwise rough terms (N extra turns, a K-char skill body loaded M times, etc.)
 - **Fix:** the specific, actionable change
 (repeat per finding; omit categories with no evidence)

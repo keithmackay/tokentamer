@@ -1,14 +1,12 @@
 # Platform Limitations
 
-This skill's body references plugin-namespaced Claude Code skills (`superpowers:writing-skills`, `artifact-design`) that have no equivalent on Codex or Gemini CLI. This same `SKILL.md` is loaded by both Codex and Gemini CLI (identical `skills/<name>/SKILL.md` path per each platform's spec), so the fallbacks below hold for both.
+The same `SKILL.md` ships to every platform: the root copy (Claude Code symlink/copy installs, Antigravity) and `skills/tokentamer/` (Claude Code marketplace installs, Codex, Gemini CLI). These are the features that differ, and what to do where one is missing.
 
-The following features from the original (Claude Code) skill are not supported on this platform:
+| Feature | Claude Code | Codex | Antigravity | Gemini CLI | Fallback |
+|---|:-:|:-:|:-:|:-:|---|
+| Subagent dispatch (step 4) | ✅ | ✅ | ✅ | ❌ | Analyze the NDJSON scan output in the main session. |
+| Artifact publishing + `artifact-design` skill (step 6) | ✅ | ❌ | ❌ | ❌ | Hand back the markdown report file. |
+| `superpowers:writing-skills` (categories.md) | optional | ❌ | ❌ | ❌ | Apply the rule in categories.md directly: always-loaded SKILL.md under ~500 words, heavy material in referenced files. |
+| AskUserQuestion multi-select (Fix Mode step 2) | ✅ | ❌ | ❌ | ❌ | Present a numbered list and ask which numbers to apply, in any combination. |
 
-| Feature | Reason |
-|---------|--------|
-| Reference to `superpowers:writing-skills` (categories.md) | Plugin-namespaced Claude Code skill; not installed/resolvable on Codex or Gemini CLI. If word-count guidance is needed, apply the general rule directly: keep the always-loaded SKILL.md under ~500 words, move heavy reference material to separate files. |
-| Reference to the `artifact-design` skill (step 6) | Claude Code-specific Artifact publishing skill; has no equivalent on Codex or Gemini CLI. Skip that step — just deliver the markdown report file directly. |
-| Subagent dispatch (step 4) | Supported on Codex; **not** supported on Gemini CLI (no `Task`-style dispatch). On Gemini CLI, analyze the NDJSON scan output directly in the main session rather than delegating per session/batch. |
-| AskUserQuestion multi-select (Fix Mode step 2) | Claude Code-specific UI tool; no equivalent on Codex or Gemini CLI. Present the fixable-item list as a plain numbered list and ask the user to name which numbers to apply, in any combination. |
-
-The transcript source data itself (`~/.claude/projects/*.jsonl`) is Claude Code-specific. This skill only analyzes Claude Code session history, regardless of which platform runs it.
+The transcript data itself (`~/.claude/projects/*.jsonl`) is Claude Code's. This skill only analyzes Claude Code session history, whichever platform runs it.

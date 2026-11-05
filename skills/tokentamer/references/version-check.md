@@ -2,11 +2,11 @@
 
 Followed when the skill is invoked with `--version` instead of running the normal workflow.
 
-1. Read the installed version from this skill's own manifest: `.claude-plugin/plugin.json` if present, else `.codex-plugin/plugin.json`, else `gemini-extension.json` — whichever exists for this platform install. If none exist (a bare Claude Code skill with only SKILL.md), read the topmost version heading in `CHANGELOG.md` instead.
+1. Find the install root: this skill's folder, or — when it is `skills/tokentamer/` inside a plugin (marketplace, Codex, Gemini CLI installs) — the folder two levels up. Read the installed version from the first manifest there: `.claude-plugin/plugin.json`, else `.codex-plugin/plugin.json`, else `gemini-extension.json`. If none exist, read the topmost version heading in the install root's `CHANGELOG.md` instead.
 2. Print: `tokentamer v<installed-version>`
 3. Best-effort update check — determine this skill's GitHub source repo:
-   a. If `.git` exists here and `git remote get-url origin` resolves to a `github.com` URL, use that `owner/repo`.
-   b. Otherwise, search this skill's own `README.md` for the first `https://github.com/<owner>/tokentamer` URL with a real owner (skip placeholders like `<owner>` and links to other repos) and use that; it is `keithmackay/tokentamer` as shipped.
+   a. If `.git` exists in the install root and `git remote get-url origin` resolves to a `github.com` URL, use that `owner/repo`.
+   b. Otherwise, search the install root's `README.md` for the first `https://github.com/<owner>/tokentamer` URL with a real owner (skip placeholders like `<owner>` and links to other repos) and use that; it is `keithmackay/tokentamer` as shipped.
    c. If neither yields a repo, or the `gh` CLI isn't installed/authenticated: stop here. Print nothing further — no status line, no error.
 4. If a repo was found: run `gh api repos/<owner>/<repo>/releases/latest -q .tag_name` (strip a leading `v`). Compare to the installed version:
    - Equal → append: `Status: up to date`

@@ -6,6 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+## [1.6.0] - 2026-11-05
+
+- Scanner: compaction summaries, local-command/shell output and interrupt markers are no longer counted as human turns; they're reported as `compactions` (a context-pressure signal) and `interruptions`
+- Scanner: `<synthetic>` placeholder replies are ignored for `modelsUsed`, `tokensByModel` and per-turn `model`
+- Scanner: subagent MCP calls count toward `mcpToolUsage`; subagents also report `mcpToolCalls` and `skillInvocations`
+- Scanner: sessions from nested worktrees (`.worktrees/<name>`, `.claude/worktrees/<name>`) are included and tagged with `worktree`
+- Scanner: streams transcripts line by line (about 45% lower peak memory on 50 MB files)
+- Slash commands with arguments and `!` shell commands are kept as turns in readable form
+- One platform-aware `SKILL.md` and `help.md` for every platform; Claude Code marketplace installs no longer get the Codex/Gemini wording. `check-sync.sh` now covers them and the shared `platform-limitations.md`
+- Add `.claude-plugin/plugin.json`; `--version` now finds the manifest from a plugin's `skills/tokentamer/` folder
+- Reports mask credential-like strings in quoted evidence
+- README: compatibility table moved before installation
+
 ## [1.5.0] - 2026-11-04
 
 - Scanner: read subagent transcripts (`<session>/subagents/*.jsonl` + `.meta.json`) and emit `subagents` (type, requested model, brief length, tokens, tool calls, read targets) and `subagentTokens`; main-thread `tokens` are unchanged
