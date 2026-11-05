@@ -1,7 +1,9 @@
 #!/usr/bin/env node
 // Scans a project's Claude Code transcript JSONL files and emits one JSON
-// object per session (newline-delimited) combining user prompts, token usage,
-// tool/MCP usage, read targets, model switches, and skill loads — the raw
+// object per session (newline-delimited) combining user prompts (each tagged
+// with the model that answered it), token usage, tool/MCP usage, connected
+// MCP tools, read targets, skill loads and listing size, and per-subagent
+// stats from the session's subagent transcripts — the raw
 // material for a token-efficiency review. NDJSON output means a caller can
 // page through or grep by session instead of loading one giant blob into
 // context.
@@ -112,13 +114,26 @@ if (jsonlFiles.length === 0) {
   process.exit(1);
 }
 
-for (const file of jsonlFiles) {
-  const sessionId = file.replace(/\.jsonl$/, "");
-  const lines = fs.readFileSync(path.join(transcriptDir, file), "utf-8").split("\n").filter(l => l.trim());
+function readJsonl(filePath) {
+  const entries = [];
+  for (const line of fs.readFileSync(filePath, "utf-8").split("\n")) {
+    if (!line.trim()) continue;
+    try { entries.push(JSON.parse(line)); } catch { /* skip malformed lines */ }
+  }
+  return entries;
+}
 
-  const session = {
-    sessionId,
+function readMeta(filePath) {
+  try { return JSON.parse(fs.readFileSync(filePath, "utf-8")); } catch { return {}; }
+}
+
+// Scans one transcript file. The main session file yields human turns; a
+// subagent file (subagent: true) yields only the length of its brief, since
+// its "user" entries are the parent agent's prompt and tool results.
+function scanFile(filePath, { subagent = false } = {}) {
+  const stats = {
     turns: [],
+    promptLength: null,
     tokens: emptyTokens(),
     tokensByModel: {},
     modelsUsed: {},
@@ -127,26 +142,52 @@ for (const file of jsonlFiles) {
     readTargets: {},
     skillInvocations: [],
     skillLoads: [],
+    toolsAvailable: new Set(),
+    mcpServers: new Set(),
+    skillListing: null,
     firstTimestamp: null,
     lastTimestamp: null,
   };
   // Claude Code writes one assistant entry per content block, each repeating
   // the same message.id and usage — count each message once.
   const seenMessageIds = new Set();
+  // Turns still waiting for the model of the reply that answers them.
+  let unanswered = [];
 
-  for (const line of lines) {
-    let entry;
-    try { entry = JSON.parse(line); } catch { continue; }
-
+  for (const entry of readJsonl(filePath)) {
     const ts = entry.timestamp;
     if (ts) {
-      if (!session.firstTimestamp) session.firstTimestamp = ts;
-      session.lastTimestamp = ts;
+      if (!stats.firstTimestamp) stats.firstTimestamp = ts;
+      stats.lastTimestamp = ts;
+    }
+
+    const attachment = entry.type === "attachment" && entry.attachment;
+    if (attachment) {
+      if (attachment.type === "deferred_tools_delta") {
+        for (const name of attachment.addedNames || []) stats.toolsAvailable.add(name);
+        for (const name of attachment.removedNames || []) stats.toolsAvailable.delete(name);
+      } else if (attachment.type === "deferred_tools_record") {
+        for (const tool of attachment.entries || []) if (tool && tool.name) stats.toolsAvailable.add(tool.name);
+      } else if (attachment.type === "mcp_instructions_delta") {
+        for (const name of attachment.addedNames || []) stats.mcpServers.add(name);
+      } else if (attachment.type === "skill_listing") {
+        const chars = (attachment.content || "").length;
+        if (!stats.skillListing || chars > stats.skillListing.chars) {
+          stats.skillListing = { count: attachment.skillCount ?? null, chars };
+        }
+      }
+      continue;
+    }
+
+    if (subagent && entry.type === "user" && entry.message && stats.promptLength === null) {
+      const brief = userText(entry.message.content);
+      if (brief) stats.promptLength = brief.length;
+      continue;
     }
 
     // Sidechain user entries are prompts from the main agent to a subagent,
     // not something the human typed.
-    if (entry.type === "user" && entry.message && !entry.isSidechain) {
+    if (!subagent && entry.type === "user" && entry.message && !entry.isSidechain) {
       const text = userText(entry.message.content);
       if (!text) continue;
 
@@ -155,24 +196,27 @@ for (const file of jsonlFiles) {
       if (entry.isMeta) {
         const match = text.match(SKILL_BODY_PREFIX);
         if (match) {
-          session.skillLoads.push({ skill: path.basename(match[1]), timestamp: ts, length: text.length });
+          stats.skillLoads.push({ skill: path.basename(match[1]), timestamp: ts, length: text.length });
         }
         continue;
       }
 
       const command = text.match(/<command-name>\/?([^<\s]+)<\/command-name>/);
       if (command) {
-        session.skillInvocations.push({ skill: command[1], timestamp: ts, source: "slash" });
+        stats.skillInvocations.push({ skill: command[1], timestamp: ts, source: "slash" });
       }
 
       const cleaned = stripSystemTags(text).trim();
       if (cleaned) {
-        session.turns.push({
+        const turn = {
           role: "user",
           timestamp: ts,
           length: cleaned.length,
+          model: null,
           content: full ? cleaned : truncateSafely(cleaned, 400),
-        });
+        };
+        stats.turns.push(turn);
+        unanswered.push(turn);
       }
     }
 
@@ -183,12 +227,16 @@ for (const file of jsonlFiles) {
 
       if (isNewMessage) {
         const model = message.model;
-        if (model) session.modelsUsed[model] = (session.modelsUsed[model] || 0) + 1;
+        if (model) {
+          stats.modelsUsed[model] = (stats.modelsUsed[model] || 0) + 1;
+          for (const turn of unanswered) turn.model = model;
+          unanswered = [];
+        }
         if (message.usage) {
-          addUsage(session.tokens, message.usage);
+          addUsage(stats.tokens, message.usage);
           if (model) {
-            if (!session.tokensByModel[model]) session.tokensByModel[model] = emptyTokens();
-            addUsage(session.tokensByModel[model], message.usage);
+            if (!stats.tokensByModel[model]) stats.tokensByModel[model] = emptyTokens();
+            addUsage(stats.tokensByModel[model], message.usage);
           }
         }
       }
@@ -199,23 +247,101 @@ for (const file of jsonlFiles) {
           if (block.type !== "tool_use") continue;
           const name = block.name || "unknown";
           const input = block.input || {};
-          session.toolCalls[name] = (session.toolCalls[name] || 0) + 1;
+          stats.toolCalls[name] = (stats.toolCalls[name] || 0) + 1;
           if (name.startsWith("mcp__")) {
-            if (!session.mcpToolCalls[name]) session.mcpToolCalls[name] = [];
-            session.mcpToolCalls[name].push(ts);
+            if (!stats.mcpToolCalls[name]) stats.mcpToolCalls[name] = [];
+            stats.mcpToolCalls[name].push(ts);
           }
           if (name === "Skill" && input.skill) {
-            session.skillInvocations.push({ skill: input.skill, timestamp: ts, source: "tool" });
+            stats.skillInvocations.push({ skill: input.skill, timestamp: ts, source: "tool" });
           }
           const target = input.file_path || input.notebook_path || input.url;
           if (READ_TOOLS.has(name) && target) {
             const key = `${name}:${target}`;
-            session.readTargets[key] = (session.readTargets[key] || 0) + 1;
+            stats.readTargets[key] = (stats.readTargets[key] || 0) + 1;
           }
         }
       }
     }
   }
+  return stats;
+}
+
+// Groups connected and called MCP tools by server ("mcp__<server>__<tool>")
+// into { server: { available, used } } — a server with many tools and no
+// calls is paying schema tokens for nothing.
+function summarizeMcpUsage(toolsAvailable, mcpToolCalls) {
+  const usage = {};
+  const names = new Set([...toolsAvailable, ...Object.keys(mcpToolCalls)]);
+  for (const name of names) {
+    const match = name.match(/^mcp__(.+?)__/);
+    if (!match) continue;
+    const server = match[1];
+    if (!usage[server]) usage[server] = { available: 0, used: 0 };
+    usage[server].available++;
+    if (mcpToolCalls[name]) usage[server].used++;
+  }
+  return usage;
+}
+
+// Subagent transcripts live beside the session file, in
+// <sessionId>/subagents/agent-<id>.jsonl with an optional .meta.json sidecar.
+function scanSubagents(sessionDir) {
+  const dir = path.join(sessionDir, "subagents");
+  if (!fs.existsSync(dir)) return [];
+  return fs.readdirSync(dir)
+    .filter(f => f.endsWith(".jsonl"))
+    .map(f => {
+      const base = f.replace(/\.jsonl$/, "");
+      const stats = scanFile(path.join(dir, f), { subagent: true });
+      const meta = readMeta(path.join(dir, `${base}.meta.json`));
+      return {
+        agentId: base.replace(/^agent-/, ""),
+        agentType: meta.agentType ?? null,
+        description: meta.description ?? null,
+        model: meta.model ?? null,
+        promptLength: stats.promptLength,
+        tokens: stats.tokens,
+        tokensByModel: stats.tokensByModel,
+        toolCalls: stats.toolCalls,
+        readTargets: stats.readTargets,
+        firstTimestamp: stats.firstTimestamp,
+        lastTimestamp: stats.lastTimestamp,
+      };
+    })
+    .sort((a, b) => String(a.firstTimestamp).localeCompare(String(b.firstTimestamp)));
+}
+
+for (const file of jsonlFiles) {
+  const sessionId = file.replace(/\.jsonl$/, "");
+  const stats = scanFile(path.join(transcriptDir, file));
+  const subagents = scanSubagents(path.join(transcriptDir, sessionId));
+
+  const subagentTokens = emptyTokens();
+  for (const agent of subagents) {
+    for (const key of Object.keys(subagentTokens)) subagentTokens[key] += agent.tokens[key];
+  }
+  const mcpToolUsage = summarizeMcpUsage(stats.toolsAvailable, stats.mcpToolCalls);
+
+  const session = {
+    sessionId,
+    turns: stats.turns,
+    tokens: stats.tokens,
+    tokensByModel: stats.tokensByModel,
+    subagentTokens,
+    modelsUsed: stats.modelsUsed,
+    toolCalls: stats.toolCalls,
+    mcpToolCalls: stats.mcpToolCalls,
+    mcpToolUsage,
+    mcpServers: [...stats.mcpServers].sort(),
+    readTargets: stats.readTargets,
+    skillInvocations: stats.skillInvocations,
+    skillLoads: stats.skillLoads,
+    skillListing: stats.skillListing,
+    subagents,
+    firstTimestamp: stats.firstTimestamp,
+    lastTimestamp: stats.lastTimestamp,
+  };
 
   if (session.turns.length > 0 || Object.keys(session.toolCalls).length > 0) {
     console.log(JSON.stringify(session));

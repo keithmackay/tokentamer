@@ -18,6 +18,11 @@ function makeHome() {
   const dir = path.join(home, ".claude", "projects", "-Users-test-My-Projects-my-app");
   fs.mkdirSync(dir, { recursive: true });
   fs.copyFileSync(path.join(here, "fixtures", "session.jsonl"), path.join(dir, `${sessionId}.jsonl`));
+
+  const richDir = path.join(home, ".claude", "projects", "-Users-test-rich");
+  fs.mkdirSync(richDir, { recursive: true });
+  fs.copyFileSync(path.join(here, "fixtures", "rich.jsonl"), path.join(richDir, "rich-session.jsonl"));
+  fs.cpSync(path.join(here, "fixtures", "rich-subagents"), path.join(richDir, "rich-session", "subagents"), { recursive: true });
   return home;
 }
 
@@ -31,7 +36,11 @@ function scan(...args) {
 }
 
 function scanSession(...args) {
-  const result = scan(projectDir, ...args);
+  return scanProject(projectDir, ...args);
+}
+
+function scanProject(dir, ...args) {
+  const result = scan(dir, ...args);
   assert.equal(result.status, 0, result.stderr);
   const lines = result.stdout.trim().split("\n");
   assert.equal(lines.length, 1, "expected exactly one NDJSON line per session");
@@ -84,4 +93,39 @@ test("rejects bad arguments", () => {
   assert.equal(scan("relative/path").status, 1);
   assert.equal(scan().status, 1);
   assert.equal(scan(projectDir, "--bogus").status, 1);
+});
+
+test("attributes each turn to the model that answered it", () => {
+  const s = scanProject("/Users/test/rich");
+  assert.deepEqual(s.turns.map(t => [t.content, t.model]), [["first", "model-big"], ["second", "model-small"], ["third", null]]);
+});
+
+test("scans subagent transcripts with their meta sidecar", () => {
+  const s = scanProject("/Users/test/rich");
+  assert.deepEqual(s.subagents.map(a => [a.agentId, a.agentType, a.description, a.model, a.promptLength]), [
+    ["abc", "explorer", "Explore the repo", "haiku", "do the thing brief".length],
+    ["def", null, null, null, "tiny".length],
+  ]);
+  assert.deepEqual(s.subagents[0].tokens, { input: 4, cacheCreation: 0, cacheRead: 0, output: 40 });
+  assert.deepEqual(s.subagents[0].readTargets, { "Read:/p/a.js": 1 });
+  assert.deepEqual(s.subagentTokens, { input: 5, cacheCreation: 0, cacheRead: 0, output: 42 });
+  assert.deepEqual(s.tokens, { input: 2, cacheCreation: 0, cacheRead: 0, output: 2 }, "main-thread tokens exclude subagents");
+});
+
+test("reports connected MCP tools per server and how many were used", () => {
+  const s = scanProject("/Users/test/rich");
+  assert.deepEqual(s.mcpToolUsage, { a: { available: 2, used: 1 } });
+  assert.deepEqual(s.mcpServers, ["a server"]);
+});
+
+test("reports the always-loaded skill listing size", () => {
+  const s = scanProject("/Users/test/rich");
+  assert.deepEqual(s.skillListing, { count: 3, chars: "- a: one\n- b: two\n- c: three".length });
+});
+
+test("sessions without subagents or attachments get empty defaults", () => {
+  const s = scanSession();
+  assert.deepEqual(s.subagents, []);
+  assert.deepEqual(s.mcpToolUsage, { srv: { available: 1, used: 1 } }, "called tools count even without a tool listing");
+  assert.equal(s.skillListing, null);
 });

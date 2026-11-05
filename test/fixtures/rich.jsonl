@@ -1,0 +1,10 @@
+{"type":"attachment","timestamp":"2026-02-01T00:00:00.000Z","attachment":{"type":"skill_listing","content":"- a: one\n- b: two\n- c: three","skillCount":3,"isInitial":true,"names":["a","b","c"]}}
+{"type":"attachment","timestamp":"2026-02-01T00:00:00.100Z","attachment":{"type":"deferred_tools_delta","addedNames":["Read","mcp__a__x","mcp__a__y","mcp__b__z"],"removedNames":[]}}
+{"type":"attachment","timestamp":"2026-02-01T00:00:00.200Z","attachment":{"type":"mcp_instructions_delta","addedNames":["a server"],"removedNames":[]}}
+{"type":"user","timestamp":"2026-02-01T00:00:01.000Z","message":{"role":"user","content":"first"}}
+{"type":"assistant","timestamp":"2026-02-01T00:00:02.000Z","message":{"id":"m1","model":"model-big","usage":{"input_tokens":1,"output_tokens":1},"content":[{"type":"tool_use","name":"mcp__a__x","input":{}},{"type":"tool_use","name":"Agent","input":{"prompt":"go"}}]}}
+{"type":"attachment","timestamp":"2026-02-01T00:00:02.500Z","attachment":{"type":"deferred_tools_delta","addedNames":[],"removedNames":["mcp__b__z"]}}
+{"type":"user","timestamp":"2026-02-01T00:00:03.000Z","message":{"role":"user","content":"second"}}
+{"type":"assistant","timestamp":"2026-02-01T00:00:04.000Z","message":{"id":"m2","model":"model-small","usage":{"input_tokens":1,"output_tokens":1},"content":[{"type":"text","text":"ok"}]}}
+{"type":"attachment","timestamp":"2026-02-01T00:00:04.500Z","attachment":{"type":"skill_listing","content":"- d: four","skillCount":1,"isInitial":false,"names":["d"]}}
+{"type":"user","timestamp":"2026-02-01T00:00:05.000Z","message":{"role":"user","content":"third"}}

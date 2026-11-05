@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+## [1.5.0] - 2026-11-04
+
+- Scanner: read subagent transcripts (`<session>/subagents/*.jsonl` + `.meta.json`) and emit `subagents` (type, requested model, brief length, tokens, tool calls, read targets) and `subagentTokens`; main-thread `tokens` are unchanged
+- Scanner: tag each human turn with the `model` that answered it, so "Wrong model" findings are turn-level
+- Scanner: emit `mcpToolUsage` (per MCP server, tools available vs used) and `mcpServers` from Claude Code's tool-listing attachments
+- Scanner: emit `skillListing` (count and size of the always-loaded skill catalog)
+- Categories: MCP row is now "MCP servers connected but unused"; new "Always-on listing overhead" and "Subagent delegation" categories
+- Add consolidated plan `docs/plans/improve-this-2026-11-04.md`
+
 ## [1.4.0] - 2026-10-05
 
 - Add `--fix` mode: offers to apply fixable findings (split verbose harness/skill files, save missed memories) after the report, with per-item confirmation

@@ -1,0 +1,2 @@
+{"type":"user","isSidechain":true,"agentId":"def","timestamp":"2026-02-01T00:00:02.150Z","message":{"role":"user","content":"tiny"}}
+{"type":"assistant","isSidechain":true,"agentId":"def","timestamp":"2026-02-01T00:00:02.250Z","message":{"id":"s2","model":"model-big","usage":{"input_tokens":1,"output_tokens":2},"content":[{"type":"text","text":"ok"}]}}

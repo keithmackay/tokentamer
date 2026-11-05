@@ -1,12 +1,12 @@
 # Tokentamer
 
-Audits a project's Claude Code session transcripts to find concrete, evidence-backed opportunities to have used fewer tokens: repeated/duplicated work, context pollution, unused MCP tools, poorly-disclosed skills, bloated prompts, verbose CLAUDE.md/memory files, wrong model choices, missed memory-save opportunities, and places a deterministic script would have beaten an LLM call.
+Audits a project's Claude Code session transcripts to find concrete, evidence-backed opportunities to have used fewer tokens: repeated/duplicated work, context pollution, unused MCP servers, always-loaded skill listings, costly subagent delegation, poorly-disclosed skills, bloated prompts, verbose CLAUDE.md/memory files, wrong model choices, missed memory-save opportunities, and places a deterministic script would have beaten an LLM call.
 
 ## Highlights
 
 - **Evidence-based findings** — every finding cites a session id, timestamp, and quote or tool-call sequence, not generic advice
-- **Deterministic extraction** — a bundled script parses transcript JSONL directly instead of asking the model to eyeball raw logs
-- **Ten review categories** — context pollution, duplicated work, LLM-vs-script calls, late or rarely used MCP tools, undisclosed skills, oversized prompts, verbose harness files, wrong model choice, missed memory opportunities, and redundant reads
+- **Deterministic extraction** — a bundled script parses transcript JSONL directly (including subagent transcripts) instead of asking the model to eyeball raw logs
+- **Twelve review categories** — context pollution, duplicated work, LLM-vs-script calls, unused MCP servers, always-on listing overhead, undisclosed skills, oversized prompts, verbose harness files, wrong model choice, subagent delegation, missed memory opportunities, and redundant reads
 - **Scales to large histories** — output is newline-delimited JSON (one session per line), so a large project can be paged through or delegated to subagents instead of loaded whole into context
 - **Cross-platform** — ships as a native skill for Claude Code, Codex, Antigravity, and Gemini CLI, with documented fallbacks where a platform lacks a feature the others have
 
@@ -112,7 +112,7 @@ node scripts/scan-transcripts.js /Users/you/Projects/my-app > /tmp/scan.ndjson
 node scripts/scan-transcripts.js /Users/you/Projects/my-app --full --session <sessionId>
 ```
 
-Each line of output is one session: human-typed turns (truncated to 400 chars by default), token totals per session and per model, model usage, tool-call counts, MCP tool-call timestamps, repeated read/fetch targets, skill invocations (slash command or `Skill` tool), and injected skill bodies with their size — the same data the skill itself analyzes.
+Each line of output is one session: human-typed turns (truncated to 400 chars by default, each tagged with the model that answered it), token totals per session and per model, model usage, tool-call counts, MCP tool-call timestamps, connected-vs-used MCP tools per server, repeated read/fetch targets, skill invocations (slash command or `Skill` tool), injected skill bodies with their size, the size of the always-loaded skill listing, and a per-subagent breakdown (type, model, brief length, tokens, tool calls, reads) from the session's subagent transcripts — the same data the skill itself analyzes.
 
 To have the skill offer fixes after the report, add `--fix`:
 
